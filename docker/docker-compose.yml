@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  wordpress:
+    build:
+      context: ./wordpress
+    container_name: wordpress
+    ports:
+      - "8080:80"
+    env_file: "aws.env"
+    volumes:
+      - wordpress_data:/var/www/html
+
+
+volumes:
+  wordpress_data:
