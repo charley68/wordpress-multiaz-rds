@@ -79,6 +79,9 @@ data "aws_subnets" "subnets" {
 
 resource "aws_instance" "wordpress" {
 
+
+  depends_on = [ aws_subnet.public1, aws_subnet.public2 ]
+  
   count = length(var.availability_zone)
   subnet_id = data.aws_subnets.subnets.ids[count.index]
 

@@ -39,9 +39,41 @@ EOF
 
 cat <<EOF2 >/home/ec2-user/start_wordpress.sh
 #!/bin/bash
-aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
-docker-compose up -d
+while [ true ]
+do
+
+    aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
+    # Run docker-compose up -d
+    docker-compose up -d
+
+    # Check the exit status of the docker-compose command
+    if [ $? -eq 0 ]; then
+        echo "docker-compose up -d succeeded"
+        exit 0
+    else
+        echo "docker-compose up -d failed"
+        sleep 60
+    fi
+done
+
 EOF2
+
+cat <<EOF3 > /etc/systemd/system/start-docker-compose.service
+[Unit]
+Description=Run docker-compose on startup
+After=network.target
+
+[Service]
+ExecStart=/home/ec2-user/start_wordpress.sh
+Restart=always
+User=ec2-user
+
+[Install]
+WantedBy=multi-user.target
+EOF3
+
+sudo systemctl daemon-reload
+sudo systemctl enable start-docker-compose.service
 
 chown ec2-user:ec2-user /home/ec2-user/docker-compose.yml
 chown ec2-user:ec2-user /home/ec2-user/start_wordpress.sh
