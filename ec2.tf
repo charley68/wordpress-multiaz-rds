@@ -1,10 +1,10 @@
-data "aws_ami" "amzn_linux_2" {
+data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["amazon"]
 
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm*"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-*-*-amd64-server-*"]
   }
 
   filter {
@@ -86,7 +86,7 @@ resource "aws_instance" "wordpress" {
   subnet_id = data.aws_subnets.subnets.ids[count.index]
 
   
-  ami  = data.aws_ami.amzn_linux_2.image_id
+  ami  = data.aws_ami.ubuntu.image_id
   instance_type = var.instance
   key_name                    = "${var.project}-key"
 

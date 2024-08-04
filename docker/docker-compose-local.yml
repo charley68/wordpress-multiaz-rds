@@ -1,10 +1,14 @@
 services:
   wordpress:
     build:
-      context: ./wordpress
-    container_name: wordpress:ec2
+      context: .
+      dockerfile: Dockerfile
+    image: wp-image:latest
     ports:
-      - "8080:80"
+      - "80:80"
+    #volumes:
+     # - ./custom-content/wp-content:/var/www/html/wp-content
+     # - wordpress_data:/var/www/html
     environment:
       WORDPRESS_DB_HOST: db:3306
       WORDPRESS_DB_USER: wordpress
@@ -12,8 +16,7 @@ services:
       WORDPRESS_DB_NAME: wordpress_db
     depends_on:
       - db
-    volumes:
-      - wordpress_data:/var/www/html
+
 
   db:
     image: mysql:5.7
@@ -27,5 +30,5 @@ services:
       - db_data:/var/lib/mysql
 
 volumes:
-  wordpress_data:
-  db_data:
+ # wordpress_data:
+   db_data:

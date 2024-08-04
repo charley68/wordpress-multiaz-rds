@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  wordpress:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - wordpress_data:/var/www/html
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: steve12345
+      WORDPRESS_DB_NAME: wordpress_db
+
+  db:
+    image: mysql:5.7
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: wordpress_db
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: steve12345
+      MYSQL_ROOT_PASSWORD: Meopham12345!
+
+volumes:
+  wordpress_data:
+  db_data:
