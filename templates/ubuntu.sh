@@ -1,21 +1,23 @@
 #!/bin/bash
 # Update package list and install necessary packages
 apt-get update -y
-apt-get install -y apache2 php php-mysql awscli
+apt-get install -y apache2 php php-mysql awscli unzip
 
 # Start and enable Apache
 systemctl start apache2
 systemctl enable apache2
 
-# Download WordPress files from S3
-aws s3 cp s3://${S3_BUCKET}/wordpress /var/www/html --recursive
 
-# Set permissions
-chown -R www-data:www-data /var/www/html
-chmod -R 755 /var/www/html
+cat > /home/ubuntu/pullLatestWPCodeFromS3.sh << EOL
+#!/bin/bash
+
+# Download WordPress files from S3
+aws s3 cp s3://${S3_BUCKET}/wordpress.zip /var/www/html
+unzip -o /var/www/html/wordpress.zip  -d /var/www/html
+
 
 # Configure database connection (replace with your actual DB credentials)
-cat > /var/www/html/wp-config.php << EOL
+cat > /var/www/html/wp-config.php << EOL2
 <?php
 define('DB_NAME', 'DB_NAME');
 define('DB_USER', '${DB_USER}');
@@ -36,7 +38,27 @@ define('WP_DEBUG', false);
 if ( !defined('ABSPATH') )
     define('ABSPATH', dirname(__FILE__) . '/');
 require_once(ABSPATH . 'wp-settings.php');
-EOL
+
+chown -R ubuntu:ubuntu /var/www/html/wp-config.php
+chmod -R 755 /var/www/html/wp-config.php
+
+EOL2
 
 # Restart Apache to apply changes
 systemctl restart apache2
+
+EOL
+
+chown ubuntu /home/ubuntu/pullLatestWPCodeFromS3.sh
+chmod u+x /home/ubuntu/pullLatestWPCodeFromS3.sh
+/home/ubuntu/pullLatestWPCodeFromS3.sh
+
+# Set permissions
+chown -R ubuntu:ubuntu /var/www/html
+chmod -R 755 /var/www/html
+
+# Add the sudoers configuration for the ubuntu user.  This is so our script running as ubunto has permision to restart apache.
+echo 'ubuntu ALL=NOPASSWD: /usr/sbin/service apache2 restart' | sudo tee /etc/sudoers.d/ubuntu_apache
+
+# Set correct permissions for the sudoers file
+chmod 0440 /etc/sudoers.d/ubuntu_apache

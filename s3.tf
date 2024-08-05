@@ -1,5 +1,5 @@
 
-resource "aws_s3_bucket" "wordpress-bucket" {
+/*resource "aws_s3_bucket" "wordpress-bucket" {
   bucket = var.s3_bucket_name
   acl    = "private"
 
@@ -10,8 +10,12 @@ resource "aws_s3_bucket" "wordpress-bucket" {
   tags = {
     Name = "Bucket for storing our wordpress code to pull down onto EC2. Maybe put this in GIT at some point."
   }
-}
+}*/
 
+locals {
+
+  s3_bucket_arn = "arn:aws:s3:::${var.s3_bucket_name}"
+}
 
 resource "aws_iam_policy" "s3_access_policy" {
   name = "s3_access_policy"
@@ -28,8 +32,10 @@ resource "aws_iam_policy" "s3_access_policy" {
           "s3:DeleteObject"
         ],
         Resource = [
-          "${aws_s3_bucket.wordpress-bucket.arn}",
-          "${aws_s3_bucket.wordpress-bucket.arn}/*"
+         // "${aws_s3_bucket.wordpress-bucket.arn}",
+         // "${aws_s3_bucket.wordpress-bucket.arn}/*"
+         "${local.s3_bucket_arn}",
+         "${local.s3_bucket_arn}/*"
         ]
       }
     ]

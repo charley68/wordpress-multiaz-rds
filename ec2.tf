@@ -91,6 +91,23 @@ data "aws_subnets" "subnets" {
   depends_on = [data.aws_subnet.public1, data.aws_subnet.public2]
 }
 
+
+data "template_file" "user_data" {
+//  template = file("${path.module}/user_data.sh")
+
+  template = templatefile(var.script_path, {
+    ACCOUNT_ID  = data.aws_caller_identity.current.account_id
+    REGION = data.aws_region.current.name
+    DB_HOST = aws_db_instance.rds_instance.endpoint
+    DB_NAME = var.db_name
+    DB_PASS = var.db_password
+    DB_USER = var.db_username
+    //REPO = "${var.project}-${var.wordpress_docker_image}-repo"
+    S3_BUCKET = var.s3_bucket_name
+  })
+}
+
+
 resource "aws_instance" "wordpress" {
 
 
@@ -109,14 +126,10 @@ resource "aws_instance" "wordpress" {
   associate_public_ip_address = true
   iam_instance_profile = aws_iam_instance_profile.ec2_instance_profile.name
 
-  user_data = templatefile(var.script_path, {
-    ACCOUNT_ID  = data.aws_caller_identity.current.account_id
-    REGION = data.aws_region.current.name
-    DB_HOST = aws_db_instance.rds_instance.endpoint
-    DB_NAME = var.db_name
-    DB_PASS = var.db_password
-    DB_USER = var.db_username
-    //REPO = "${var.project}-${var.wordpress_docker_image}-repo"
-    S3_BUCKET = var.s3_bucket_name
-  })
+  user_data     = data.template_file.user_data.rendered
+
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
