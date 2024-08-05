@@ -1,10 +1,10 @@
-data "aws_ami" "amzn_linux_2" {
+data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["amazon"]
 
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm*"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-*-*-amd64-server-*"]
   }
 
   filter {
@@ -66,6 +66,18 @@ resource "aws_iam_role_policy_attachment" "attach_ecr_pull_policy" {
 }
 
 
+# Data block to fetch subnets after creation
+data "aws_subnet" "public1" {
+  depends_on = [aws_subnet.public1]
+  id         = aws_subnet.public1.id
+}
+
+data "aws_subnet" "public2" {
+  depends_on = [aws_subnet.public2]
+  id         = aws_subnet.public2.id
+}
+
+
 data "aws_subnets" "subnets" {
   filter {
     name   = "vpc-id"
@@ -75,6 +87,8 @@ data "aws_subnets" "subnets" {
   tags = {
     Type = "Public"   // CHange this to Private for PRODUCTION.
   }
+
+  depends_on = [data.aws_subnet.public1, data.aws_subnet.public2]
 }
 
 resource "aws_instance" "wordpress" {
@@ -87,7 +101,7 @@ resource "aws_instance" "wordpress" {
   subnet_id = data.aws_subnets.subnets.ids[count.index]
 
   
-  ami  = data.aws_ami.amzn_linux_2.image_id
+  ami  = data.aws_ami.ubuntu.image_id
   instance_type = var.instance
   key_name                    = "${var.project}-key"
 
@@ -102,6 +116,7 @@ resource "aws_instance" "wordpress" {
     DB_NAME = var.db_name
     DB_PASS = var.db_password
     DB_USER = var.db_username
-    REPO = "${var.project}-${var.wordpress_docker_image}-repo"
+    //REPO = "${var.project}-${var.wordpress_docker_image}-repo"
+    S3_BUCKET = var.s3_bucket_name
   })
 }

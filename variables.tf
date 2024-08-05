@@ -42,6 +42,10 @@ variable "db_password" {
     type = string
 } 
 
-variable "wordpress_docker_image" {
+//variable "wordpress_docker_image" {
+//   type = string
+//}
+
+variable "s3_bucket_name" {
     type = string
 }

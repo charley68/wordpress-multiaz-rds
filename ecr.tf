@@ -1,5 +1,9 @@
 
 
+# NOT SURE IF WE NEED ECR YET ......
+
+/*
+
 module "ecr" {
   source = "terraform-aws-modules/ecr/aws"
 
@@ -30,4 +34,4 @@ module "ecr" {
     Terraform   = "true"
     Environment = "dev"
   }
-}
+}*/
