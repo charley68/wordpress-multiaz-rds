@@ -7,8 +7,10 @@ apt-get install -y apache2 php php-mysql awscli unzip
 systemctl start apache2
 systemctl enable apache2
 
+# Get rid of the default pache welcome page to force index.php to run instead.
+rm /var/www/html/index.html
 
-cat > /home/ubuntu/pullLatestWPCodeFromS3.sh << EOL
+cat > /home/ubuntu/pullLatestWPCodeFromS3.sh << 'EOL'
 #!/bin/bash
 
 # Download WordPress files from S3
@@ -17,11 +19,11 @@ unzip -o /var/www/html/wordpress.zip  -d /var/www/html
 
 
 # Configure database connection (replace with your actual DB credentials)
-cat > /var/www/html/wp-config.php << EOL2
+cat > /var/www/html/wp-config.php << 'EOL2'
 <?php
-define('DB_NAME', 'DB_NAME');
+define('DB_NAME', '${DB_NAME}');
 define('DB_USER', '${DB_USER}');
-define('DB_PASSWORD', 'DB_PASS');
+define('DB_PASSWORD', '${DB_PASS}');
 define('DB_HOST', '${DB_HOST}');
 define('DB_CHARSET', 'utf8');
 define('DB_COLLATE', '');
@@ -39,19 +41,19 @@ if ( !defined('ABSPATH') )
     define('ABSPATH', dirname(__FILE__) . '/');
 require_once(ABSPATH . 'wp-settings.php');
 
+EOL2
 chown -R ubuntu:ubuntu /var/www/html/wp-config.php
 chmod -R 755 /var/www/html/wp-config.php
-
-EOL2
 
 # Restart Apache to apply changes
 systemctl restart apache2
 
 EOL
 
+/home/ubuntu/pullLatestWPCodeFromS3.sh
+
 chown ubuntu /home/ubuntu/pullLatestWPCodeFromS3.sh
 chmod u+x /home/ubuntu/pullLatestWPCodeFromS3.sh
-/home/ubuntu/pullLatestWPCodeFromS3.sh
 
 # Set permissions
 chown -R ubuntu:ubuntu /var/www/html

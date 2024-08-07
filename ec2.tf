@@ -93,7 +93,6 @@ data "aws_subnets" "subnets" {
 
 
 data "template_file" "user_data" {
-//  template = file("${path.module}/user_data.sh")
 
   template = templatefile(var.script_path, {
     ACCOUNT_ID  = data.aws_caller_identity.current.account_id
@@ -113,8 +112,8 @@ resource "aws_instance" "wordpress" {
 
   depends_on = [ aws_subnet.public1, aws_subnet.public2 ]
 
-  //count = length(var.availability_zone)
-  count = var.ec2Count
+  //count = length(var.availability_zone) -  One for each AZ 
+  count = var.ec2Count  // Override this here for quicker testing with one EC2
   subnet_id = data.aws_subnets.subnets.ids[count.index]
 
   
@@ -122,13 +121,14 @@ resource "aws_instance" "wordpress" {
   instance_type = var.instance
   key_name                    = "${var.project}-key"
 
-  security_groups             = [aws_security_group.allow_ssh.id]
+  security_groups             = [aws_security_group.allow_ssh.id, aws_security_group.LB-SG.id, aws_security_group.rds_security_group.id]
+  
   associate_public_ip_address = true
   iam_instance_profile = aws_iam_instance_profile.ec2_instance_profile.name
 
   user_data     = data.template_file.user_data.rendered
 
-
+  // Doing this ensures EC2 auto re-creates if we change the user data in template file.
   lifecycle {
     create_before_destroy = true
   }
