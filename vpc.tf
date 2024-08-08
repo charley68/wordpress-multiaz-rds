@@ -1,8 +1,12 @@
+locals {
+  public_subnets = [aws_subnet.public1.id, aws_subnet.public2.id]
+}
+
 #vpc
 resource "aws_vpc" "this" {
   cidr_block = "10.100.0.0/16"
   tags = {
-    Name = "steve-vpc"
+    Name = "${var.project}-vpc"
   }
 }
 

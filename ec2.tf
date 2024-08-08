@@ -4,7 +4,8 @@ data "aws_ami" "ubuntu" {
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-*-*-amd64-server-*"]
+    //values = ["ubuntu/images/hvm-ssd/ubuntu-*-*-amd64-server-*"]
+    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-*-*-arm64-server-*"]
   }
 
   filter {
@@ -12,6 +13,7 @@ data "aws_ami" "ubuntu" {
     values = ["ebs"]
   }
 }
+
 
 resource "aws_iam_role" "ec2_role" {
   name = "ec2-role"
@@ -26,14 +28,18 @@ resource "aws_iam_role" "ec2_role" {
       }
     }]
   })
+
+  tags = local.tags
 }
 
 resource "aws_iam_instance_profile" "ec2_instance_profile" {
   name = "ec2-instance-profile"
   role = aws_iam_role.ec2_role.name
+
+  tags = local.tags
 }
 
-resource "aws_iam_policy" "ecr_pull_policy" {
+/*resource "aws_iam_policy" "ecr_pull_policy" {
   name        = "ecr-pull-policy"
   description = "Policy to allow pulling images from ECR"
 
@@ -63,33 +69,8 @@ resource "aws_iam_policy" "ecr_pull_policy" {
 resource "aws_iam_role_policy_attachment" "attach_ecr_pull_policy" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = aws_iam_policy.ecr_pull_policy.arn
-}
+}*/
 
-
-# Data block to fetch subnets after creation
-data "aws_subnet" "public1" {
-  depends_on = [aws_subnet.public1]
-  id         = aws_subnet.public1.id
-}
-
-data "aws_subnet" "public2" {
-  depends_on = [aws_subnet.public2]
-  id         = aws_subnet.public2.id
-}
-
-
-data "aws_subnets" "subnets" {
-  filter {
-    name   = "vpc-id"
-    values = [aws_vpc.this.id]
-  }
-
-  tags = {
-    Type = "Public"   // CHange this to Private for PRODUCTION.
-  }
-
-  depends_on = [data.aws_subnet.public1, data.aws_subnet.public2]
-}
 
 
 data "template_file" "user_data" {
@@ -101,8 +82,8 @@ data "template_file" "user_data" {
     DB_NAME = var.db_name
     DB_PASS = var.db_password
     DB_USER = var.db_username
-    //REPO = "${var.project}-${var.wordpress_docker_image}-repo"
     S3_BUCKET = var.s3_bucket_name
+    EFS_NAME = aws_efs_file_system.wordpress_efs.dns_name
   })
 }
 
@@ -110,13 +91,12 @@ data "template_file" "user_data" {
 resource "aws_instance" "wordpress" {
 
 
-  depends_on = [ aws_subnet.public1, aws_subnet.public2 ]
+  count = length(var.availability_zone)
+  //count = var.ec2Count  // Override this here for quicker testing with one EC2
+  subnet_id = local.public_subnets[count.index]
 
-  //count = length(var.availability_zone) -  One for each AZ 
-  count = var.ec2Count  // Override this here for quicker testing with one EC2
-  subnet_id = data.aws_subnets.subnets.ids[count.index]
 
-  
+  //ami  = var.ami_id
   ami  = data.aws_ami.ubuntu.image_id
   instance_type = var.instance
   key_name                    = "${var.project}-key"
@@ -132,4 +112,10 @@ resource "aws_instance" "wordpress" {
   lifecycle {
     create_before_destroy = true
   }
+
+  tags = merge(
+    local.tags,
+    {
+      Name = "${var.project} Instance ${count.index + 1}"
+  })
 }

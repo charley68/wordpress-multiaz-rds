@@ -6,10 +6,6 @@ variable "availability_zone" {
   type    = list(string)
 }
 
-variable "ec2Count" {
-   type = number
-}
-
 variable "project" {
     type = string
 }
